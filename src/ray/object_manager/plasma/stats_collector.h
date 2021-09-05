@@ -18,6 +18,7 @@
 #pragma once
 
 #include "ray/object_manager/plasma/common.h"
+#include "ray/object_manager/plasma/lifecycle_meta_store.h"
 
 namespace plasma {
 
@@ -29,19 +30,19 @@ namespace plasma {
 class ObjectStatsCollector {
  public:
   // Called after a new object is created.
-  void OnObjectCreated(const LocalObject &object);
+  void OnObjectCreated(const LocalObject &object, const LifecycleMetadata &metadata);
 
   // Called after an object is sealed.
-  void OnObjectSealed(const LocalObject &object);
+  void OnObjectSealed(const LocalObject &object, const LifecycleMetadata &metadata);
 
   // Called BEFORE an object is deleted.
-  void OnObjectDeleting(const LocalObject &object);
+  void OnObjectDeleting(const LocalObject &object, const LifecycleMetadata &metadata);
 
   // Called after an object's ref count is bumped by 1.
-  void OnObjectRefIncreased(const LocalObject &object);
+  void OnObjectRefIncreased(const LocalObject &object, const LifecycleMetadata &metadata);
 
   // Called after an object's ref count is decreased by 1.
-  void OnObjectRefDecreased(const LocalObject &object);
+  void OnObjectRefDecreased(const LocalObject &object, const LifecycleMetadata &metadata);
 
   // Debug dump the stats.
   void GetDebugDump(std::stringstream &buffer) const;

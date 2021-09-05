@@ -94,7 +94,7 @@ struct ObjectStatsCollectorTest : public Test {
     for (const auto &obj_entry : object_store_->object_table_) {
       const auto &obj = obj_entry.second;
 
-      if (obj->ref_count > 0) {
+      if (manager_->meta_store_.GetRefCount(obj_entry.first) > 0) {
         num_objects_in_use++;
         num_bytes_in_use += obj->object_info.data_size;
       }
@@ -103,13 +103,13 @@ struct ObjectStatsCollectorTest : public Test {
         num_objects_unsealed++;
         num_bytes_unsealed += obj->object_info.data_size;
       } else {
-        if (obj->ref_count == 1 &&
+        if (manager_->meta_store_.GetRefCount(obj_entry.first) == 1 &&
             obj->source == plasma::flatbuf::ObjectSource::CreatedByWorker) {
           num_objects_spillable++;
           num_bytes_spillable += obj->object_info.data_size;
         }
 
-        if (obj->ref_count == 0) {
+        if (manager_->meta_store_.GetRefCount(obj_entry.first) == 0) {
           num_objects_evictable++;
           num_bytes_evictable += obj->object_info.data_size;
         }

@@ -19,7 +19,8 @@
 
 namespace plasma {
 
-void ObjectStatsCollector::OnObjectCreated(const LocalObject &obj) {
+void ObjectStatsCollector::OnObjectCreated(const LocalObject &obj,
+                                           const LifecycleMetadata & /* unused */) {
   const auto kDataSize = obj.GetObjectInfo().data_size;
   const auto kSource = obj.GetSource();
 
@@ -42,14 +43,15 @@ void ObjectStatsCollector::OnObjectCreated(const LocalObject &obj) {
   num_bytes_unsealed_ += kDataSize;
 }
 
-void ObjectStatsCollector::OnObjectSealed(const LocalObject &obj) {
+void ObjectStatsCollector::OnObjectSealed(const LocalObject &obj,
+                                          const LifecycleMetadata &metadata) {
   RAY_CHECK(obj.Sealed());
   const auto kDataSize = obj.GetObjectInfo().data_size;
 
   num_objects_unsealed_--;
   num_bytes_unsealed_ -= kDataSize;
 
-  if (obj.GetRefCount() == 1) {
+  if (metadata.ref_count == 1) {
     if (obj.GetSource() == plasma::flatbuf::ObjectSource::CreatedByWorker) {
       num_objects_spillable_++;
       num_bytes_spillable_ += kDataSize;
@@ -57,13 +59,14 @@ void ObjectStatsCollector::OnObjectSealed(const LocalObject &obj) {
   }
 
   // though this won't happen in practice but add it here for completeness.
-  if (obj.GetRefCount() == 0) {
+  if (metadata.ref_count == 0) {
     num_objects_evictable_++;
     num_bytes_evictable_ += kDataSize;
   }
 }
 
-void ObjectStatsCollector::OnObjectDeleting(const LocalObject &obj) {
+void ObjectStatsCollector::OnObjectDeleting(const LocalObject &obj,
+                                            const LifecycleMetadata &metadata) {
   const auto kDataSize = obj.GetObjectInfo().data_size;
   const auto kSource = obj.GetSource();
 
@@ -81,7 +84,7 @@ void ObjectStatsCollector::OnObjectDeleting(const LocalObject &obj) {
     num_bytes_errored_ -= kDataSize;
   }
 
-  if (obj.GetRefCount() > 0) {
+  if (metadata.ref_count > 0) {
     num_objects_in_use_--;
     num_bytes_in_use_ -= kDataSize;
   }
@@ -93,25 +96,26 @@ void ObjectStatsCollector::OnObjectDeleting(const LocalObject &obj) {
   }
 
   // obj sealed
-  if (obj.GetRefCount() == 1 &&
+  if (metadata.ref_count == 1 &&
       kSource == plasma::flatbuf::ObjectSource::CreatedByWorker) {
     num_objects_spillable_--;
     num_bytes_spillable_ -= kDataSize;
   }
 
-  if (obj.GetRefCount() == 0) {
+  if (metadata.ref_count == 0) {
     num_objects_evictable_--;
     num_bytes_evictable_ -= kDataSize;
   }
 }
 
-void ObjectStatsCollector::OnObjectRefIncreased(const LocalObject &obj) {
+void ObjectStatsCollector::OnObjectRefIncreased(const LocalObject &obj,
+                                                const LifecycleMetadata &metadata) {
   const auto kDataSize = obj.GetObjectInfo().data_size;
   const auto kSource = obj.GetSource();
   const bool kSealed = obj.Sealed();
 
   // object ref count bump from 0 to 1
-  if (obj.GetRefCount() == 1) {
+  if (metadata.ref_count == 1) {
     num_objects_in_use_++;
     num_bytes_in_use_ += kDataSize;
 
@@ -127,20 +131,21 @@ void ObjectStatsCollector::OnObjectRefIncreased(const LocalObject &obj) {
   }
 
   // object ref count bump from 1 to 2
-  if (obj.GetRefCount() == 2 &&
+  if (metadata.ref_count == 2 &&
       kSource == plasma::flatbuf::ObjectSource::CreatedByWorker && kSealed) {
     num_objects_spillable_--;
     num_bytes_spillable_ -= kDataSize;
   }
 }
 
-void ObjectStatsCollector::OnObjectRefDecreased(const LocalObject &obj) {
+void ObjectStatsCollector::OnObjectRefDecreased(const LocalObject &obj,
+                                                const LifecycleMetadata &metadata) {
   const auto kDataSize = obj.GetObjectInfo().data_size;
   const auto kSource = obj.GetSource();
   const bool kSealed = obj.Sealed();
 
   // object ref count decrease from 2 to 1
-  if (obj.GetRefCount() == 1) {
+  if (metadata.ref_count == 1) {
     if (kSource == plasma::flatbuf::ObjectSource::CreatedByWorker && kSealed) {
       num_objects_spillable_++;
       num_bytes_spillable_ += kDataSize;
@@ -148,7 +153,7 @@ void ObjectStatsCollector::OnObjectRefDecreased(const LocalObject &obj) {
   }
 
   // object ref count decrease from 1 to 0
-  if (obj.GetRefCount() == 0) {
+  if (metadata.ref_count == 0) {
     num_objects_in_use_--;
     num_bytes_in_use_ -= kDataSize;
 
