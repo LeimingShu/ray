@@ -129,7 +129,7 @@ from ray.actor import method  # noqa: E402
 from ray.runtime_context import _get_runtime_context  # noqa: E402
 
 # Ray version string.
-__version__ = "0.8.1"
+__version__ = "0.8.1-remote-task"
 
 __all__ = [
     "jobs",

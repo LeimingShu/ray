@@ -812,6 +812,10 @@ def init(address=None,
     for hook in _post_init_hooks:
         hook()
 
+    print("======================================")
+    print("欢迎使用Ray，版本号：{}。".format(ray.__version__))
+    print("======================================",end="\n\n")
+
     return _global_node.address_info
 
 
